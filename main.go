@@ -18,12 +18,9 @@ import (
 	"github.com/paulmach/orb/planar"
 )
 
-const (
-	NZ_FILE   = "nz.geojson"
-	BASE_PATH = "/mapcache"
-	//BASE_PATH    = "/home/cameron/linz"
-	LINZ_API_KEY = "9656fa35939b4e2f8e627c5cd8768778"
-)
+var LINZ_API_KEY = getEnv("LINZ_API_KEY", "")
+var BASE_PATH = getEnv("LINZ_BASE_PATH", "/mapcache")
+var NZ_FILE = getEnv("LINZ_BOUND_FILE", "nz.geojson")
 
 var b, _ = ioutil.ReadFile(NZ_FILE)
 var nzBounds, _ = geojson.UnmarshalFeatureCollection(b)
@@ -206,7 +203,18 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "{\"requests\": %d, \"hit\":%d, \"miss\": %d}", req, hit, miss)
 }
 
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
 func main() {
+	if LINZ_API_KEY == "" {
+		log.Fatal("Provide an API key through the LINZ_API_KEY environment variable")
+		return
+	}
 
 	http.HandleFunc("/linz_aerial/", tileHandler)
 	http.HandleFunc("/linz_topo/", tileHandler)
