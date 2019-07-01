@@ -5,13 +5,13 @@ import (
 	"io"
 	"log"
 	"math"
-	"net/http"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 
 	"io/ioutil"
+	"net/http"
 
 	"github.com/paulmach/orb"
 	"github.com/paulmach/orb/geojson"
