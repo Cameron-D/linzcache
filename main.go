@@ -28,7 +28,6 @@ var nzBounds, _ = geojson.UnmarshalFeatureCollection(b)
 var req, hit, miss int
 
 func tileHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.RequestURI)
 	req++
 
 	// extract x, y and z
@@ -36,6 +35,7 @@ func tileHandler(w http.ResponseWriter, r *http.Request) {
 	submatch := re.FindStringSubmatch(r.URL.Path)
 
 	if !(len(submatch) == 5) {
+		log.Printf("%s %s %s %s\n", r.RemoteAddr, r.Method, "MISSINGPARAM", r.RequestURI)
 		http.NotFound(w, r)
 		return
 	}
@@ -51,11 +51,13 @@ func tileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if xerr != nil || yerr != nil || zerr != nil {
+		log.Printf("%s %s %s %s\n", r.RemoteAddr, r.Method, "BADNUMBER", r.RequestURI)
 		http.NotFound(w, r)
 		return
 	}
 
 	if !isXYZInsidePolygon(x, y, z) {
+		log.Printf("%s %s %s %s\n", r.RemoteAddr, r.Method, "OUTOFBOUND", r.RequestURI)
 		http.NotFound(w, r)
 		return
 	}
@@ -69,6 +71,7 @@ func tileHandler(w http.ResponseWriter, r *http.Request) {
 	if FileExists(imgpath) {
 		// serve file
 		hit++
+		log.Printf("%s %s %s %s\n", r.RemoteAddr, r.Method, "OK/HIT", r.RequestURI)
 		w.Header().Set("Content-Type", "image/png")
 		http.ServeFile(w, r, imgpath)
 		return
@@ -77,11 +80,11 @@ func tileHandler(w http.ResponseWriter, r *http.Request) {
 	// have we logged a miss before?
 	if FileExists(imgpath + ".404") {
 		hit++
+		log.Printf("%s %s %s %s\n", r.RemoteAddr, r.Method, "MISSING/HIT", r.RequestURI)
 		http.NotFound(w, r)
 		return
 	}
 
-	miss++
 	os.MkdirAll(imgbase, os.ModePerm)
 
 	tileurl := fmt.Sprintf("https://tiles-a.data-cdn.linz.govt.nz/services;key=%s/tiles/v4/%s/EPSG:3857/%d/%d/%d.png",
@@ -89,11 +92,14 @@ func tileHandler(w http.ResponseWriter, r *http.Request) {
 
 	// download and serve the tile
 	if DownloadTile(tileurl, imgpath) {
+		miss++
+		log.Printf("%s %s %s %s\n", r.RemoteAddr, r.Method, "OK/MISS", r.RequestURI)
 		w.Header().Set("Content-Type", "image/png")
 		http.ServeFile(w, r, imgpath)
 		return
 	}
 
+	log.Printf("%s %s %s %s\n", r.RemoteAddr, r.Method, "UNKNOWN", r.RequestURI)
 	http.NotFound(w, r)
 	return
 }
