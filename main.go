@@ -208,7 +208,7 @@ func i2s(i int) string {
 func statsHandler(w http.ResponseWriter, r *http.Request) {
 	hostname, err := os.Hostname()
 	if err != nil {
-		fmt.Fprintf(w, "{\"hostname\":\"unknown\", \"requests\": %d, \"hit\":%d, \"miss\": %d}", hostname, req, hit, miss)
+		fmt.Fprintf(w, "{\"hostname\":\"unknown\", \"requests\": %d, \"hit\":%d, \"miss\": %d}", req, hit, miss)
 	} else {
 		fmt.Fprintf(w, "{\"hostname\":\"%s\", \"requests\": %d, \"hit\":%d, \"miss\": %d}", hostname, req, hit, miss)
 	}
